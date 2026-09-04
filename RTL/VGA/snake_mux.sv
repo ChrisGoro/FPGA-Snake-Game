@@ -1,0 +1,27 @@
+module snake_mux (
+    input  logic       headDR,  
+    input  logic [7:0] headRGB, 
+    
+    input  logic       bodyDR,  
+    input  logic [7:0] bodyRGB, 
+    
+    output logic       finalDR,
+    output logic [7:0] finalRGB 
+);
+
+
+localparam logic [7:0] TRANSPARENT_ENCODING = 8'hFF ;
+
+assign finalDR = headDR | bodyDR;
+
+// head has strict priority over body 
+assign finalRGB = (headDR == 1'b1) ? headRGB : 
+                  (bodyDR == 1'b1) ? bodyRGB : 
+                                     TRANSPARENT_ENCODING;
+	
+	//assign finalRGB = TRANSPARENT_ENCODING;
+//assign finalRGB = (headDR == 1'b1) ? headRGB : bodyRGB;
+
+//assign finalRGB = headRGB;
+
+endmodule

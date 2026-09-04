@@ -1,0 +1,19 @@
+module seg7_converter (
+	
+	input logic [1:0] current_level_in, 
+	input logic [5:0] snake_length, 
+	
+	output logic [3:0] current_level_out,
+	
+	output logic [3:0] tens,         
+	output logic [3:0] ones         
+);
+
+    always_comb begin
+        current_level_out = { 2'b00, current_level_in };
+		  
+        tens = snake_length / 10;
+        ones = snake_length % 10;
+    end
+
+endmodule

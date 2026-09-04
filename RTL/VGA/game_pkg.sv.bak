@@ -1,0 +1,12 @@
+/*
+
+	Global game package file
+	includes global state machine states
+	and important parameters
+
+*/
+
+package game_pkg;
+
+
+typedef enum logic[2:0] { IDLE, PLAY, GAME_OVER } game_state_t;

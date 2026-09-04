@@ -1,0 +1,29 @@
+module score_combiner (
+    input  logic       tens_req,
+    input  logic [7:0] tens_RGB,
+    input  logic       ones_req,
+    input  logic [7:0] ones_RGB,
+
+    output logic       combined_req,
+    output logic [7:0] combined_RGB
+);
+
+    always_comb begin
+        // If the Tens digit is currently being drawn, output its color
+        if (tens_req == 1'b1) begin
+            combined_req = 1'b1;
+            combined_RGB = tens_RGB;
+        end 
+        // Otherwise, if the Ones digit is being drawn, output its color
+        else if (ones_req == 1'b1) begin
+            combined_req = 1'b1;
+            combined_RGB = ones_RGB;
+        end 
+        // If neither is being drawn, output transparent/nothing
+        else begin
+            combined_req = 1'b0;
+            combined_RGB = 8'hFF; 
+        end
+    end
+
+endmodule 

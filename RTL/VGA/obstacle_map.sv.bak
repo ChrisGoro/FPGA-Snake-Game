@@ -1,0 +1,24 @@
+module obstacle_map (
+    input  logic [1:0] current_level, // from game controller
+    output logic [224:0] obstacleMatrix
+);
+
+    // Level 1: No obstacles (Empty 225-bit matrix)
+    localparam logic [224:0] LEVEL_1 = 225'h0;
+    
+    // Level 2: Two parallel vertical walls on both sides of the map
+    localparam logic [224:0] LEVEL_2 = 225'h00000_FFFFF_00000...; 
+	 
+	 // Level 3: One "plus" shape in the middle of the map
+    localparam logic [224:0] LEVEL_3 = 225'h00000_FFFFF_00000...; 
+
+    always_comb begin
+        case(current_level)
+            2'd0: obstacleMatrix = LEVEL_1;
+            2'd1: obstacleMatrix = LEVEL_2;
+				2'd2: obstacleMatrix = LEVEL_3;
+            default: obstacleMatrix = LEVEL_1;
+        endcase
+    end
+
+endmodule 

@@ -1,0 +1,66 @@
+// Roman & Christopher Prod
+// 2026
+// All Rights Reserved
+//
+// Do not distribute!!!
+
+module	FoodLogic	(	
+					input		logic	clk,
+					input		logic	resetN,
+					input 	logic addNewFood,
+					
+					input		logic [3:0] randX,
+					input		logic [3:0] randY,
+					
+					input 	logic	[14:0] [14:0] snakeMatrix,
+					
+					input 	logic collision_Smiley_Hart,
+					input 	logic [3:0] snakeHeadX,
+					input 	logic [3:0] snakeHeadY,
+					
+					output 	logic	[14:0] [14:0] foodMatrix
+);
+
+localparam FOOD_MATRIX_DEFAULT = // default table to load on reset 
+{{15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000},
+ {15'b000000000000000}};
+ 
+logic foodPending = 1'b0;
+ 
+ 
+always_ff@(posedge clk or negedge resetN) 
+begin
+	if(!resetN) begin
+		foodMatrix <= FOOD_MATRIX_DEFAULT;
+	end else begin
+		
+		if(collision_Smiley_Hart == 1'b1) begin		// remove eaten food
+			foodMatrix[snakeHeadX][snakeHeadY] = 1'b0;
+		end
+		
+		if(addNewFood == 1'b1 ) begin
+			foodPending <= 1'b1;
+		end
+		
+		if(snakeMatrix[randX][randY] == 1'b0 && foodPending == 1'b1) begin
+				foodPending <= 1'b0;
+				foodMatrix[randX][randY] <= 1'b1;	// add new food into foodMatrixPrev
+		end
+			
+	end
+	
+
+end

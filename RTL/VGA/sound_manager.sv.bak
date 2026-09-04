@@ -1,0 +1,63 @@
+import game_pkg::*; 
+
+module sound_manager (
+    input  logic clk,
+    input  logic resetN,
+    
+    // Game Events
+    input  logic key_pressed, 
+    input  logic food_eaten,  
+    input  game_state_t current_state, 
+
+    output logic startMelody,
+    output logic [3:0] melodySelect
+);
+
+    logic last_key_state;
+    logic last_food_state;
+    game_state_t last_game_state;
+
+    // Memory Registers to remember the previous clock cycle
+    always_ff @(posedge clk or negedge resetN) begin
+        if (!resetN) begin
+            last_key_state  <= 1'b0;
+            last_food_state <= 1'b0;
+            last_game_state <= IDLE;
+        end else begin
+            last_key_state  <= key_pressed;
+            last_food_state <= food_eaten;
+            last_game_state <= current_state;
+        end
+    end
+
+    // Edge Detectors which generate a pulse on the transition frame
+    wire key_pulse       = (key_pressed == 1'b1 && last_key_state == 1'b0);
+    wire food_pulse      = (food_eaten == 1'b1 && last_food_state == 1'b0);
+    wire game_over_pulse = (current_state == GAME_OVER && last_game_state != GAME_OVER);
+
+    // Audio Priority Routing
+    always_comb begin
+        // Default: Silence
+        startMelody = 1'b0;
+        melodySelect = 4'd0; 
+
+        // Priority 1: Game Over
+        if (game_over_pulse) begin
+            startMelody = 1'b1;
+            melodySelect = 4'd2; // Route to Song #2
+        end 
+        
+        // Priority 2: Eating Food
+        else if (food_pulse) begin
+            startMelody = 1'b1;
+            melodySelect = 4'd1; // Route to Song #1
+        end
+        
+        // Priority 3: UI/Movement Key Presses
+        else if (key_pulse) begin
+            startMelody = 1'b1;
+            melodySelect = 4'd0; // Route to Song #0
+        end
+    end
+
+endmodule 

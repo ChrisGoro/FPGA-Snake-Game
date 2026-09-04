@@ -1,0 +1,21 @@
+// (c) Technion IIT, Department of Electrical Engineering 2021 
+// Written By David Bar-On  June 2018 
+// Modified to always display the letter 'L'
+
+module SEG7_letter_L (  
+	input  logic clk,
+	input  logic resetN,
+	input  logic [3:0] iDIG, 
+	input  logic darkN,
+	output logic [6:0] oSEG  
+);
+
+always_comb
+	begin
+		if (!darkN) 
+		  oSEG = 7'b1111111; 
+		else 
+		  oSEG = 7'b1000111; // Letter L
+	end
+
+endmodule

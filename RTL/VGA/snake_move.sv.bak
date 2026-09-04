@@ -1,0 +1,273 @@
+import game_pkg::*; // game package including global state machine states and important parameters
+
+module snake_move (	
+    input  logic clk,
+    input  logic resetN,
+    input  logic startOfFrame,        // 75 Hz
+    input  logic up_direction_key,    
+    input  logic down_direction_key,  
+    input  logic left_direction_key,  
+    input  logic right_direction_key, 
+    input  logic collision,	// CURRENTLY NOT IN USE !!! *****
+    
+    input  logic [2:0] foodEaten,
+	 input  logic hit_obstacle,
+    
+    input  game_state_t current_state, 
+    
+    output logic gameFinish,
+    
+    output logic [10:0] topLeftX, 
+    output logic [10:0] topLeftY,
+
+    output logic [224:0] snakeMatrix,
+    output logic [3:0] snakeHeadX,
+    output logic [3:0] snakeHeadY,
+	 
+	 output dir_t current_dir
+);
+
+localparam int MATRIX_HEIGHT = 15;
+localparam int MATRIX_WIDTH = 15;
+
+localparam logic [7:0] DEFAULT_POS = { 4'd7, 4'd7 };
+localparam int FRAMES_PER_UPDATE = 18; 
+localparam int SPEEDUP_FRAMES_PER_UPDATE = 9; 
+
+localparam logic [5:0] DEFAULT_SNAKE_LENGTH = 6'd7;
+localparam logic [5:0] MIN_SNAKE_LENGTH = 6'd2;
+localparam logic [5:0] MAX_SNAKE_LENGTH = 6'd32;
+
+dir_t next_dir;
+
+
+logic [5:0] frame_counter;
+logic [7:0] speed_timer; // Tracks remaining frames of speed boost (3sec)
+
+logic [3:0] snakeTailX;
+logic [3:0] snakeTailY;
+
+logic [5:0] snake_length;
+logic [2:0] food_type;
+
+logic [7:0] snakeMatrixQueue [0:224];
+
+
+wire can_move;
+
+wire [7:0] current_tail_idx = (snakeTailX * MATRIX_HEIGHT) + snakeTailY;
+wire [7:0] current_head_idx = (snakeHeadX * MATRIX_HEIGHT) + snakeHeadY;
+
+// the coordinates of next tail segment
+wire [3:0] next_tail_x = snakeMatrixQueue[current_tail_idx][7:4];
+wire [3:0] next_tail_y = snakeMatrixQueue[current_tail_idx][3:0];
+
+// the index of the next tail segment
+wire [7:0] next_tail_idx = (next_tail_x * MATRIX_HEIGHT) + next_tail_y;
+
+wire [5:0] active_frames_per_update = (speed_timer > 8'd0) ? SPEEDUP_FRAMES_PER_UPDATE : FRAMES_PER_UPDATE; // Dynamically changes speed
+
+assign can_move = ((next_dir == DIR_UP)    && (snakeHeadY > 0)) ||
+                  ((next_dir == DIR_DOWN)  && (snakeHeadY < MATRIX_HEIGHT - 1)) ||
+                  ((next_dir == DIR_LEFT)  && (snakeHeadX > 0)) ||
+                  ((next_dir == DIR_RIGHT) && (snakeHeadX < MATRIX_WIDTH - 1));
+						
+						
+assign topLeftX = {7'b0, snakeHeadX} << 5;
+assign topLeftY = {7'b0, snakeHeadY} << 5;
+
+
+always_ff @(posedge clk or negedge resetN) begin
+    if (!resetN) begin
+	 
+		  snakeHeadX <= DEFAULT_POS[7:4];
+		  snakeHeadY <= DEFAULT_POS[3:0];
+		  
+		  snakeTailX <= DEFAULT_POS[7:4] - 3'd6;
+		  snakeTailY <= DEFAULT_POS[3:0];
+
+		  //spawn snake with length of 7
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 1) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4], DEFAULT_POS[3:0] };
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 2) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 1'd1, DEFAULT_POS[3:0] };
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 3) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 2'd2, DEFAULT_POS[3:0] };
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 4) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 2'd3, DEFAULT_POS[3:0] };
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 5) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 3'd4, DEFAULT_POS[3:0] };
+		  snakeMatrixQueue[(DEFAULT_POS[7:4] - 6) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 3'd5, DEFAULT_POS[3:0] };
+
+		  snakeMatrix <= (225'b1 << ((DEFAULT_POS[7:4] - 1) * MATRIX_HEIGHT + DEFAULT_POS[3:0])) |
+                       (225'b1 << ((DEFAULT_POS[7:4] - 2) * MATRIX_HEIGHT + DEFAULT_POS[3:0]));
+		  
+        frame_counter <= 0;
+		  speed_timer <= 0;
+        current_dir <= DIR_UP;
+        next_dir    <= DIR_UP;
+		  
+		  
+		  food_type <= 3'd0;
+		  snake_length <= DEFAULT_SNAKE_LENGTH;
+    end 
+    else begin
+        
+        if (up_direction_key    && current_dir != DIR_DOWN)  next_dir <= DIR_UP;
+        if (down_direction_key  && current_dir != DIR_UP)    next_dir <= DIR_DOWN;
+        if (left_direction_key  && current_dir != DIR_RIGHT) next_dir <= DIR_LEFT;
+        if (right_direction_key && current_dir != DIR_LEFT)  next_dir <= DIR_RIGHT;
+		  
+		  if (current_state == PLAY && foodEaten != 3'd0) 	// save short foodEaten signal	
+            food_type <= foodEaten;
+
+        if (startOfFrame) begin
+            
+				case(current_state)
+					
+					IDLE: begin
+						
+						snakeHeadX <= DEFAULT_POS[7:4];
+					   snakeHeadY <= DEFAULT_POS[3:0];
+					  
+					   snakeTailX <= DEFAULT_POS[7:4] - 3'd6;		// TODO: Change magic number 3'd6 to parameter DEFAULT_SNAKE_LENGTH
+					   snakeTailY <= DEFAULT_POS[3:0];
+
+					   //spawn snake with length of 7
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 1) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4], DEFAULT_POS[3:0] };
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 2) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 1'd1, DEFAULT_POS[3:0] };
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 3) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 2'd2, DEFAULT_POS[3:0] };
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 4) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 2'd3, DEFAULT_POS[3:0] };
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 5) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 3'd4, DEFAULT_POS[3:0] };
+					   snakeMatrixQueue[(DEFAULT_POS[7:4] - 6) * MATRIX_HEIGHT + DEFAULT_POS[3:0]] <= { DEFAULT_POS[7:4] - 3'd5, DEFAULT_POS[3:0] };
+
+					   snakeMatrix <= (225'b1 << ((DEFAULT_POS[7:4] - 1) * MATRIX_HEIGHT + DEFAULT_POS[3:0])) |
+                                    (225'b1 << ((DEFAULT_POS[7:4] - 2) * MATRIX_HEIGHT + DEFAULT_POS[3:0]));
+					  
+					   frame_counter <= 0;
+						speed_timer <= 0;
+					   current_dir <= DIR_UP;
+					   next_dir    <= DIR_UP;
+						
+						food_type <= 3'd0;
+						snake_length <= DEFAULT_SNAKE_LENGTH;
+											
+					end
+					
+					PLAY: begin	// game is currently played - all snake movement logic is here
+						
+						if(speed_timer > 8'd0) begin
+							speed_timer <= speed_timer - 1'b1;
+						end
+		  
+						if(frame_counter >= active_frames_per_update) begin
+							frame_counter <= 0;
+							current_dir <= next_dir;
+                
+							if(can_move == 1'b1
+								&&	snakeMatrix[current_head_idx] == 1'b0 
+								&& hit_obstacle == 1'b0
+								&& snake_length >= MIN_SNAKE_LENGTH 
+							) begin
+							
+								case (next_dir)
+								  DIR_UP:	begin
+								  
+										snakeHeadY <= snakeHeadY - 1'd1;				
+										snakeMatrixQueue[current_head_idx] <= { snakeHeadX, snakeHeadY - 1'd1};
+								  end
+								  
+								  DIR_DOWN:  begin 
+								  
+										snakeHeadY <= snakeHeadY + 1'd1;						
+										snakeMatrixQueue[current_head_idx] <= { snakeHeadX, snakeHeadY + 1'd1};
+								  end
+								  
+								  DIR_LEFT:  begin 
+								  
+										snakeHeadX <= snakeHeadX - 1'd1;						
+										snakeMatrixQueue[current_head_idx] <= { snakeHeadX - 1'd1, snakeHeadY };
+								  end
+								  
+								  DIR_RIGHT: 	begin
+
+										snakeHeadX <= snakeHeadX + 1'd1;						
+										snakeMatrixQueue[current_head_idx] <= { snakeHeadX + 1'd1, snakeHeadY };
+								  end
+								endcase
+								
+								
+								case(food_type) 	// define snake movement according to eaten food type
+								
+									3'b000: begin		// no food eaten
+									
+										snakeTailX <= snakeMatrixQueue[current_tail_idx][7:4];		// save new tail coords
+										snakeTailY <= snakeMatrixQueue[current_tail_idx][3:0];		// save new tail coords
+					 
+										snakeMatrix[current_head_idx] <= 1'b1;			// add next body segment
+										
+										snakeMatrixQueue[current_tail_idx] <= 7'd0; 		// clear prev tail pos
+										snakeMatrix[current_tail_idx] <= 1'b0; 			// clear prev tail pos
+									
+									end
+									
+									3'b001: begin		// shrink food 
+									
+										snakeTailX <= snakeMatrixQueue[next_tail_idx][7:4];    // take next tail X pos from matrix
+                              snakeTailY <= snakeMatrixQueue[next_tail_idx][3:0];    // take next tail y pos from matrix
+										
+										snakeMatrix[current_head_idx] <= 1'b1;		// add next body segment 
+										
+										snakeMatrixQueue[next_tail_idx] <= 7'd0;
+										snakeMatrixQueue[current_tail_idx] <= 7'd0;        // clear both tail queue spots
+										snakeMatrix[next_tail_idx] <= 1'b0;
+										snakeMatrix[current_tail_idx] <= 1'b0;        // clear tail spot
+										
+										snake_length <= snake_length - 1;	// decrease snake length
+										
+										food_type <= 3'b000;		// clear eaten food type
+										
+									end
+									
+									3'b010: begin		// grow food
+										
+										snakeMatrix[current_head_idx] <= 1'b1;		// add next body segment
+										
+										snake_length <= snake_length + 1;	// increase snake length
+										
+										food_type <= 3'b000;		// clear eaten food type
+										
+									end
+									
+									3'b011: begin // SPEED FOOD
+										 // Normal movement logic (same as 3'b000)
+										snakeTailX <= snakeMatrixQueue[current_tail_idx][7:4];
+										snakeTailY <= snakeMatrixQueue[current_tail_idx][3:0];		
+										snakeMatrix[current_head_idx] <= 1'b1;
+										snakeMatrixQueue[current_tail_idx] <= 7'd0; 		
+										snakeMatrix[current_tail_idx] <= 1'b0;
+										 
+										speed_timer <= 8'd225; // speed boost timer (75Hz * 3 sec = 225 frames)
+										food_type <= 3'b000;
+										
+									end
+																		
+								endcase
+								
+						 
+							end else begin
+								gameFinish <= 1'b1;
+							end
+							
+						end else begin
+							frame_counter <= frame_counter + 1;
+						end
+					
+					end
+					
+					GAME_OVER: begin
+						gameFinish <= 1'b0;
+						food_type <= 3'd0;
+					end
+					
+				endcase
+        end
+    end 
+end
+
+endmodule

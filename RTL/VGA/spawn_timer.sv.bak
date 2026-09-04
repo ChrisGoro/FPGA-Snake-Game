@@ -1,0 +1,42 @@
+import game_pkg::*; // Import game states
+
+module spawn_timer (
+    input  logic clk,
+    input  logic resetN,
+    input  logic startOfFrame,
+    input  game_state_t current_state,
+    
+    output logic trigger_pulse
+);
+
+    // 75 Hz * 10 seconds = 750 frames. 
+    localparam int TIMER_MAX = 750; 
+    
+    logic [9:0] frame_counter; 
+
+    always_ff @(posedge clk or negedge resetN) begin
+        if (!resetN) begin
+            frame_counter <= 10'd0;
+            trigger_pulse <= 1'b0;
+        end else begin
+            trigger_pulse <= 1'b0; 
+
+            // Reset the timer if the game is in the IDLE/Menu state
+            if (current_state == IDLE) begin
+                frame_counter <= 10'd0;
+            end 
+            
+            // Only count down while actually playing
+            else if (current_state == PLAY) begin
+                if (startOfFrame == 1'b1) begin
+                    if (frame_counter >= TIMER_MAX - 1) begin
+                        frame_counter <= 10'd0;
+                        trigger_pulse <= 1'b1; // Send one clock-cycle pulse
+                    end else begin
+                        frame_counter <= frame_counter + 1'b1;
+                    end
+                end
+            end
+        end
+    end
+endmodule 

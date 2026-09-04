@@ -1,0 +1,21 @@
+module background_mux (
+
+	input logic background_dr,
+	input logic [7..0] BG_RGB,
+	
+	input logic bg_start_dr,
+	input logic [7..0] BG_START_RGB,
+	
+	input logic bg_game_over_dr,
+	input logic [7..0] BG_GAME_OVER_RGB,
+	
+	input logic bg_scores_info_dr,
+	input logic [7..0] BG_SCORES_INFO_RGB,
+		
+);
+
+
+
+
+
+endmodule

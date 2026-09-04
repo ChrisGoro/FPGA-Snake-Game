@@ -1,0 +1,51 @@
+module ObstaclesBitMap (	
+    input  logic clk,
+    input  logic resetN,
+    input  logic [10:0] offsetX,  
+    input  logic [10:0] offsetY,
+    input  logic InsideRectangle, 
+    
+    input  logic [224:0] obstacleMatrix, 
+
+    output logic drawingRequest, 
+    output logic [7:0] RGBout  
+);
+
+localparam logic [7:0] TRANSPARENT_ENCODING = 8'hFF;
+localparam logic [7:0] WALL_COLOR = 8'h55; // Dark Gray placeholder color
+
+localparam logic [9:0] TILE_NUMBER_OF_X_BITS = 5; 
+localparam logic [9:0] TILE_NUMBER_OF_Y_BITS = 5; 
+localparam int MAZE_NUMBER_OF__X_BITS = 4; 
+localparam int MAZE_NUMBER_OF__Y_BITS = 4; 
+
+logic [10:0] offsetX_MSB;
+logic [10:0] offsetY_MSB;
+logic [7:0] targetIndex;
+
+// same coordinate math used in HartsMatrixBitMap
+assign offsetX_MSB = offsetX[(TILE_NUMBER_OF_X_BITS + MAZE_NUMBER_OF__X_BITS -1 ):TILE_NUMBER_OF_X_BITS] ; 
+assign offsetY_MSB = offsetY[(TILE_NUMBER_OF_Y_BITS + MAZE_NUMBER_OF__Y_BITS -1 ):TILE_NUMBER_OF_Y_BITS] ; 
+assign targetIndex = (offsetX_MSB * 8'd15) + offsetY_MSB;
+
+always_ff@(posedge clk or negedge resetN)
+begin
+    if(!resetN) begin
+        RGBout <= TRANSPARENT_ENCODING;
+    end
+    else begin
+        RGBout <= TRANSPARENT_ENCODING; // default 
+        
+        if (InsideRectangle == 1'b1) begin 
+            if (obstacleMatrix[targetIndex] == 1'b1) begin
+                RGBout <= WALL_COLOR; // Draw the wall
+            end else begin
+                RGBout <= TRANSPARENT_ENCODING; // Empty space
+            end
+        end 
+    end 
+end
+
+assign drawingRequest = (RGBout != TRANSPARENT_ENCODING ) ? 1'b1 : 1'b0; 
+
+endmodule
