@@ -1,0 +1,138 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dW:/TECHNION/Lab1A/ProjectSnake/Almost_Full_Snake_Game/simulation/qsim
+vrandom
+Z1 !s110 1783409241
+!i10b 1
+!s100 ]MPZ1MHVIYRB_FFOXfSLR1
+IIHiZOjbhT6Dkz=om_>h=j1
+Z2 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1783409240
+Z3 8Lab1Demo.vo
+Z4 FLab1Demo.vo
+Z5 L0 32
+Z6 OV;L;10.5b;63
+r1
+!s85 0
+31
+Z7 !s108 1783409241.000000
+Z8 !s107 Lab1Demo.vo|
+Z9 !s90 -work|work|Lab1Demo.vo|
+!i113 1
+Z10 o-work work
+Z11 tCvgOpt 0
+vrandom_vlg_vec_tst
+R1
+!i10b 1
+!s100 ASH2NIGhCU6977G6^=RdC0
+I2NzIc>kRl[Hl1]XE5KD=;2
+R2
+R0
+w1783409239
+Z12 8wf_random_1.vwf.vt
+Z13 Fwf_random_1.vwf.vt
+Z14 L0 30
+R6
+r1
+!s85 0
+31
+R7
+Z15 !s107 wf_random_1.vwf.vt|
+Z16 !s90 -work|work|wf_random_1.vwf.vt|
+!i113 1
+R10
+R11
+vsnake_move
+Z17 !s110 1783410669
+!i10b 1
+!s100 3TkocBo:lhNGDWAME5maz3
+INc1<0QX6Y6bb__A1eSQfB1
+R2
+R0
+w1783410667
+R3
+R4
+R5
+R6
+r1
+!s85 0
+31
+!s108 1783410668.000000
+R8
+R9
+!i113 1
+R10
+R11
+vsnake_move_vlg_vec_tst
+R17
+!i10b 1
+!s100 ]og5YO;zTPKMVcI[;zN_>1
+IkFZ:B`[1k0a=lmLkTRQFP2
+R2
+R0
+w1783410666
+8wf_snake_move_1.vwf.vt
+Fwf_snake_move_1.vwf.vt
+R14
+R6
+r1
+!s85 0
+31
+!s108 1783410669.000000
+!s107 wf_snake_move_1.vwf.vt|
+!s90 -work|work|wf_snake_move_1.vwf.vt|
+!i113 1
+R10
+R11
+vTOP_VGA_DEMO
+!s110 1783408468
+!i10b 1
+!s100 7;;ohDTBZB>NTlf30_gPg3
+IR8U05FCb:YMk_3z:a2LJV0
+R2
+R0
+w1783408466
+R3
+R4
+R5
+R6
+r1
+!s85 0
+31
+!s108 1783408467.000000
+R8
+R9
+!i113 1
+R10
+R11
+n@t@o@p_@v@g@a_@d@e@m@o
+vTOP_VGA_DEMO_vlg_vec_tst
+!s110 1783408469
+!i10b 1
+!s100 QSOmbNUggkmG7QOXlRHPR3
+I@afaTW0;=<jeNh3Jk1O2a2
+R2
+R0
+w1783408463
+R12
+R13
+R14
+R6
+r1
+!s85 0
+31
+!s108 1783408468.000000
+R15
+R16
+!i113 1
+R10
+R11
+n@t@o@p_@v@g@a_@d@e@m@o_vlg_vec_tst
